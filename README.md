@@ -1,1 +1,1 @@
-# eDiet
+# your-diet

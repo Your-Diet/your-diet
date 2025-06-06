@@ -6,7 +6,7 @@ import (
 	"github.com/victorgiudicissi/your-diet/internal/entity"
 )
 
-type CreateDietUseCase interface {
+type CreateDiet interface {
 	Execute(ctx context.Context, diet *entity.Diet) error
 }
 
@@ -14,15 +14,13 @@ type createDietUseCase struct {
 	dietRepo DietRepository
 }
 
-func NewCreateDietUseCase(dietRepo DietRepository) CreateDietUseCase {
+func NewCreateDietUseCase(dietRepo DietRepository) CreateDiet {
 	return &createDietUseCase{
 		dietRepo: dietRepo,
 	}
 }
 
 func (uc *createDietUseCase) Execute(ctx context.Context, diet *entity.Diet) error {
-	diet.Status = "pending"
-
 	if err := uc.dietRepo.CreateDiet(ctx, diet); err != nil {
 		return err
 	}

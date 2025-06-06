@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"regexp"
 	"unicode"
@@ -25,10 +24,10 @@ var (
 
 // RegisterUserHandler handles HTTP requests related to users.
 type RegisterUserHandler struct {
-	createUserUseCase *usecase.CreateUserUseCase
+	createUserUseCase usecase.CreateUser
 }
 
-func NewRegisterUserHandler(createUserUC *usecase.CreateUserUseCase) *RegisterUserHandler {
+func NewRegisterUserHandler(createUserUC usecase.CreateUser) *RegisterUserHandler {
 	return &RegisterUserHandler{
 		createUserUseCase: createUserUC,
 	}
@@ -39,26 +38,25 @@ func (h *RegisterUserHandler) Handle(c *gin.Context) {
 	var req dto.RegisterUserRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: " + err.Error()})
-		log.Printf("Error binding JSON: %v", err)
+		c.JSON(http.StatusBadRequest, dto.NewError("something went wrong binding request data", err.Error()))
 		return
 	}
 	// Validate Email
 	if !emailRegex.MatchString(req.Email) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidEmailFormat.Error()})
+		c.JSON(http.StatusBadRequest, dto.NewError("something went wrong validating request data", ErrInvalidEmailFormat.Error()))
 		return
 	}
 
 	passworValidationErrs := validatePassword(req.Password)
 	if len(passworValidationErrs) > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": passworValidationErrs[0]})
+		c.JSON(http.StatusBadRequest, dto.NewError("something went wrong validating request data", passworValidationErrs[0]))
 		return
 	}
 
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		c.JSON(http.StatusInternalServerError, dto.NewError("something went wrong hashing password", "failed to hash password"))
 		return
 	}
 
@@ -67,43 +65,37 @@ func (h *RegisterUserHandler) Handle(c *gin.Context) {
 		Password: string(hashedPassword),
 	}
 
-	output, err := h.createUserUseCase.Execute(c.Request.Context(), user)
+	err = h.createUserUseCase.Execute(c.Request.Context(), user)
 	if err != nil {
-		log.Printf("Error creating user: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
+		c.JSON(http.StatusInternalServerError, dto.NewError("something went wrong creating user", "failed to register user"))
 		return
 	}
 
 	c.JSON(http.StatusCreated, dto.RegisterUserResponse{
-		Message: "User registered successfully",
-		UserID:  output.UserID,
+		Message: "user registered successfully",
 	})
 }
 
 func validatePassword(password string) []string {
 	var errors []string
 
-	// 1. Verificar o tamanho da senha (entre 8 e 12 caracteres)
 	if len(password) < 8 || len(password) > 12 {
-		errors = append(errors, "A senha deve ter entre 8 e 12 caracteres.")
+		errors = append(errors, "the password must be between 8 and 12 characters long")
 	}
 
-	// 2. Verificar se há pelo menos 2 letras
 	letterCount := 0
 	for _, r := range password {
-		if unicode.IsLetter(r) { // unicode.IsLetter() verifica letras de qualquer alfabeto
+		if unicode.IsLetter(r) {
 			letterCount++
 		}
 	}
 	if letterCount < 2 {
-		errors = append(errors, "A senha deve conter pelo menos 2 letras.")
+		errors = append(errors, "the password must contain at least 2 letters")
 	}
 
-	// 3. Verificar se há pelo menos 1 caractere especial
-	// Esta regex busca qualquer caractere que NÃO seja letra (a-z, A-Z) ou dígito (0-9).
 	specialCharRegex := regexp.MustCompile(`[^a-zA-Z0-9]`)
 	if !specialCharRegex.MatchString(password) {
-		errors = append(errors, "A senha deve conter pelo menos 1 caractere especial.")
+		errors = append(errors, "the password must contain at least one special character")
 	}
 
 	return errors

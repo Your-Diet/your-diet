@@ -5,7 +5,9 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/victorgiudicissi/your-diet/internal/constants"
 	"github.com/victorgiudicissi/your-diet/internal/handler"
+	"github.com/victorgiudicissi/your-diet/internal/middleware"
 	"github.com/victorgiudicissi/your-diet/internal/repository"
 	"github.com/victorgiudicissi/your-diet/internal/usecase"
 )
@@ -41,13 +43,17 @@ func main() {
 
 	// Create use cases with repositories
 	createDietUseCase := usecase.NewCreateDietUseCase(dietRepo)
+	updateDietUseCase := usecase.NewUpdateDietUseCase(dietRepo)
 	createUserUseCase := usecase.NewCreateUserUseCase(userRepo)
 	loginUseCase := usecase.NewLoginUseCase(userRepo)
+	listDietsUseCase := usecase.NewListDietsUseCase(dietRepo)
 
 	// Create handlers with use cases
 	dietHandler := handler.NewCreateDietHandler(createDietUseCase)
+	updateDietHandler := handler.NewUpdateDietHandler(updateDietUseCase)
 	registerUserHandler := handler.NewRegisterUserHandler(createUserUseCase)
 	userLoginHandler := handler.NewLoginHandler(loginUseCase)
+	listDietsHandler := handler.NewListDietsHandler(listDietsUseCase)
 
 	// Set up router
 	r := gin.Default()
@@ -57,17 +63,29 @@ func main() {
 		log.Fatalf("Failed to set trusted proxies: %v", err)
 	}
 
-	// Routes
+	// Public routes
 	r.GET("/ping", handler.Ping)
 
-	dietGroup := r.Group("/v1/diets")
+	apiGroup := r.Group("/v1")
 
-	dietGroup.POST("/", dietHandler.Handle)
+	// User routes (public)
+	userGroup := apiGroup.Group("/users")
+	{
+		userGroup.POST("/", registerUserHandler.Handle)
+		userGroup.POST("/login", userLoginHandler.HandleLogin)
+	}
 
-	userGroup := r.Group("/v1/users")
+	{
+		// Diet routes
+		dietGroup := apiGroup.Group("/diets")
+		{
+			dietGroup.Use(middleware.AuthMiddleware([]byte(usecase.JWTSecretKey)))
 
-	userGroup.POST("/", registerUserHandler.Handle)      
-	userGroup.POST("/login", userLoginHandler.HandleLogin) 
+			dietGroup.POST("/", middleware.HasPermission(constants.PermissionCreateDiet), dietHandler.Handle)
+			dietGroup.PUT("/:id", middleware.HasPermission(constants.PermissionUpdateDiet), updateDietHandler.Handle)
+			dietGroup.GET("/", middleware.HasPermission(constants.PermissionListDiet), listDietsHandler.Handle)
+		}
+	}
 
 	// Start server
 	port := os.Getenv("PORT")

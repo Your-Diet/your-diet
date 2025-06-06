@@ -13,17 +13,26 @@ import (
 	"github.com/victorgiudicissi/your-diet/internal/entity"
 )
 
+// DietRepository define a interface para o repositório de dietas
+type DietRepository interface {
+	CreateDiet(ctx context.Context, diet *entity.Diet) error
+	GetDietByID(ctx context.Context, id string) (*entity.Diet, error)
+	FindByUserEmail(ctx context.Context, userEmail string) ([]*entity.Diet, error)
+	UpdateDiet(ctx context.Context, diet *entity.Diet) error
+	Close() error
+}
+
 const ( 
 	dietCollectionName = "diets"
 )
 
-type DietRepository struct {
+type dietRepository struct {
 	client     *mongo.Client
 	database   string
 	collection string
 }
 
-func NewDietRepository(uri, database string) (*DietRepository, error) {
+func NewDietRepository(uri, database string) (DietRepository, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -36,20 +45,20 @@ func NewDietRepository(uri, database string) (*DietRepository, error) {
 		return nil, err
 	}
 
-	return &DietRepository{
+	return &dietRepository{
 		client:     client,
 		database:   database,
 		collection: dietCollectionName,
 	}, nil
 }
 
-func (r *DietRepository) Close() error {
+func (r *dietRepository) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return r.client.Disconnect(ctx)
 }
 
-func (r *DietRepository) CreateDiet(ctx context.Context, diet *entity.Diet) error {
+func (r *dietRepository) CreateDiet(ctx context.Context, diet *entity.Diet) error {
 	collection := r.client.Database(r.database).Collection(r.collection)
 
 	diet.CreatedAt = time.Now()
@@ -63,7 +72,7 @@ func (r *DietRepository) CreateDiet(ctx context.Context, diet *entity.Diet) erro
 	return nil
 }
 
-func (r *DietRepository) GetDietByID(ctx context.Context, id string) (*entity.Diet, error) {
+func (r *dietRepository) GetDietByID(ctx context.Context, id string) (*entity.Diet, error) {
 	collection := r.client.Database(r.database).Collection(r.collection)
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -76,5 +85,55 @@ func (r *DietRepository) GetDietByID(ctx context.Context, id string) (*entity.Di
 		return nil, err
 	}
 
-	return &diet, nil
+		return &diet, nil
+}
+
+// FindByUserEmail retorna todas as dietas de um usuário
+func (r *dietRepository) FindByUserEmail(ctx context.Context, userEmail string) ([]*entity.Diet, error) {
+	collection := r.client.Database(r.database).Collection(r.collection)
+
+	cursor, err := collection.Find(ctx, bson.M{"user_email": userEmail})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var diets []*entity.Diet
+	if err = cursor.All(ctx, &diets); err != nil {
+		return nil, err
+	}
+
+	return diets, nil
+}
+
+// UpdateDiet atualiza uma dieta existente
+func (r *dietRepository) UpdateDiet(ctx context.Context, diet *entity.Diet) error {
+	collection := r.client.Database(r.database).Collection(r.collection)
+
+	diet.UpdatedAt = time.Now()
+
+	update := bson.M{
+		"$set": bson.M{
+			"name":              diet.DietName,
+			"duration_in_days": diet.DurationInDays,
+			"status":           diet.Status,
+			"meals":            diet.Meals,
+			"observations":     diet.Observations,
+			"updated_at":       diet.UpdatedAt,
+		},
+	}
+
+	objID, err := primitive.ObjectIDFromHex(diet.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = collection.UpdateOne(
+		ctx,
+		bson.M{"_id": objID, "user_email": diet.UserEmail}, // Garante que só o dono pode atualizar
+		update,
+	)
+
+
+	return err
 }

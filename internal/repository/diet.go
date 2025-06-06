@@ -11,7 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/victorgiudicissi/your-diet/internal/entity"
-	"github.com/victorgiudicissi/your-diet/internal/usecase"
+)
+
+const ( 
+	dietCollectionName = "diets"
 )
 
 type DietRepository struct {
@@ -20,7 +23,7 @@ type DietRepository struct {
 	collection string
 }
 
-func NewDietRepository(uri, database, collection string) (usecase.DietRepository, error) {
+func NewDietRepository(uri, database string) (*DietRepository, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -36,7 +39,7 @@ func NewDietRepository(uri, database, collection string) (usecase.DietRepository
 	return &DietRepository{
 		client:     client,
 		database:   database,
-		collection: collection,
+		collection: dietCollectionName,
 	}, nil
 }
 

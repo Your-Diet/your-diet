@@ -11,4 +11,9 @@ type (
 		CreateDiet(ctx context.Context, diet *entity.Diet) error
 		GetDietByID(ctx context.Context, id string) (*entity.Diet, error)
 	}
+
+	UserRepository interface {
+		Create(ctx context.Context, user *entity.User) (string, error) // Returns the ID of the created user
+		FindByEmail(ctx context.Context, email string) (*entity.User, error)
+	}
 )

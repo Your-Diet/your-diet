@@ -27,17 +27,27 @@ func main() {
 		dbCollection = "diets"
 	}
 
-	// Create MongoDB repository
-	dietRepo, err := repository.NewDietRepository(mongoURI, dbName, dbCollection)
+	// Create MongoDB repository for Diets
+	dietRepo, err := repository.NewDietRepository(mongoURI, dbName) // dbCollection is 'diets'
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		log.Fatalf("Failed to connect to MongoDB for diets: %v", err)
 	}
 
-	// Create use case with repository
-	createDietUseCase := usecase.NewCreateDietUseCase(dietRepo)
+	// Create MongoDB repository for Users (uses 'users' collection by default)
+	userRepo, err := repository.NewMongoUserRepository(mongoURI, dbName)
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB for users: %v", err)
+	}
 
-	// Create handler with use case
+	// Create use cases with repositories
+	createDietUseCase := usecase.NewCreateDietUseCase(dietRepo)
+	createUserUseCase := usecase.NewCreateUserUseCase(userRepo)
+	loginUseCase := usecase.NewLoginUseCase(userRepo)
+
+	// Create handlers with use cases
 	dietHandler := handler.NewCreateDietHandler(createDietUseCase)
+	registerUserHandler := handler.NewRegisterUserHandler(createUserUseCase)
+	userLoginHandler := handler.NewLoginHandler(loginUseCase)
 
 	// Set up router
 	r := gin.Default()
@@ -49,7 +59,15 @@ func main() {
 
 	// Routes
 	r.GET("/ping", handler.Ping)
-	r.POST("/diet", dietHandler.Handle)
+
+	dietGroup := r.Group("/v1/diets")
+
+	dietGroup.POST("/", dietHandler.Handle)
+
+	userGroup := r.Group("/v1/users")
+
+	userGroup.POST("/", registerUserHandler.Handle)      
+	userGroup.POST("/login", userLoginHandler.HandleLogin) 
 
 	// Start server
 	port := os.Getenv("PORT")

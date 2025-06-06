@@ -22,7 +22,7 @@ type DietRepository interface {
 	Close() error
 }
 
-const ( 
+const (
 	dietCollectionName = "diets"
 )
 
@@ -85,7 +85,7 @@ func (r *dietRepository) GetDietByID(ctx context.Context, id string) (*entity.Di
 		return nil, err
 	}
 
-		return &diet, nil
+	return &diet, nil
 }
 
 // FindByUserEmail retorna todas as dietas de um usuário
@@ -114,7 +114,7 @@ func (r *dietRepository) UpdateDiet(ctx context.Context, diet *entity.Diet) erro
 
 	update := bson.M{
 		"$set": bson.M{
-			"name":              diet.DietName,
+			"name":             diet.DietName,
 			"duration_in_days": diet.DurationInDays,
 			"status":           diet.Status,
 			"meals":            diet.Meals,
@@ -133,7 +133,6 @@ func (r *dietRepository) UpdateDiet(ctx context.Context, diet *entity.Diet) erro
 		bson.M{"_id": objID, "user_email": diet.UserEmail}, // Garante que só o dono pode atualizar
 		update,
 	)
-
 
 	return err
 }

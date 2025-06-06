@@ -36,20 +36,20 @@ func (h *UpdateDietHandler) Handle(c *gin.Context) {
 	}
 
 	// Fazer o bind do JSON para o DTO
-	var req dto.DietRequest
+	var req *dto.DietRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewError("something went wrong updating diet", "dados inválidos: " + err.Error()))
 		return
 	}
 
-	diet, err := dto.ConvertToDiet(claimsValue.(*middleware.Claims).Email, &req)
+	diet, err := dto.ConvertToDiet(claimsValue.(*middleware.Claims).Email, req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewError("something went wrong updating diet", err.Error()))
 		return
 	}
 
 	// Chamar o caso de uso
-	updatedDiet, err := h.updateDietUseCase.Execute(c.Request.Context(), dietID, *diet)
+	updatedDiet, err := h.updateDietUseCase.Execute(c.Request.Context(), dietID, diet)
 	if err != nil {
 		status := http.StatusInternalServerError
 		errMsg := "failed to update diet: " + err.Error()

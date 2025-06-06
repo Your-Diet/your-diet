@@ -183,34 +183,34 @@ func (d *DietRequest) Validate() error {
 }
 
 type DietResponse struct {
-	ID             string   
-	UserEmail      string   
-	DietName       string   
-	DurationInDays uint32   
-	Status         string   
-	Meals         []MealResponse    
-	Observations   string    
-	CreatedBy      string    
-	CreatedAt      time.Time 
-	UpdatedAt      time.Time 
+	ID             string         `json:"id"`
+	UserEmail      string         `json:"user_email"`
+	DietName       string         `json:"name"`
+	DurationInDays uint32         `json:"duration_in_days"`
+	Status         string         `json:"status"`
+	Meals          []MealResponse `json:"meals"`
+	Observations   string         `json:"observations"`
+	CreatedBy      string         `json:"created_by"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
 }
 
 type MealResponse struct {
-	Name        string      
-	Description string      
-	TimeOfDay   string      
-	Ingredients []IngredientResponse 
+	Name        string               `json:"name"`
+	Description string               `json:"description"`
+	TimeOfDay   string               `json:"time_of_day"`
+	Ingredients []IngredientResponse `json:"ingredients"`
 }
 
 type IngredientResponse struct {
-	Description string      
-	Quantity    float64     
-	Unit        string      
-	Substitutes []IngredientResponse 
+	Description string               `json:"description"`
+	Quantity    float64              `json:"quantity"`
+	Unit        string               `json:"unit"`
+	Substitutes []IngredientResponse `json:"substitutes"`
 }
 
 type ListDietsUseCaseOutput struct {
-	Diets []*DietResponse
+	Diets []*DietResponse `json:"diets"`
 }
 
 func NewListDietsUseCaseOutput(diets []*entity.Diet) *ListDietsUseCaseOutput {

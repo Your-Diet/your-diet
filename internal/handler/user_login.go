@@ -47,9 +47,5 @@ func (h *LoginHandler) HandleLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.LoginResponse{
 		Token:       result.Token,
 		ExpiresAt:   result.ExpiresAt,
-		UserID:      result.UserID,
-		Email:       result.Email,
-		UserType:    result.UserType,
-		Permissions: result.Permissions,
 	})
 }

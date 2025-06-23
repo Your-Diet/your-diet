@@ -8,7 +8,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/victorgiudicissi/your-diet/internal/constants"
 	"github.com/victorgiudicissi/your-diet/internal/entity"
-	"github.com/victorgiudicissi/your-diet/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,7 +24,6 @@ type LoginUseCase interface {
 
 type Claims struct {
 	UserID      string   `json:"user_id"`
-	Email       string   `json:"email"`
 	Permissions []string `json:"permissions"`
 	jwt.RegisteredClaims
 }
@@ -41,7 +39,7 @@ func NewLoginUseCase(userRepo UserRepository) LoginUseCase {
 func (uc *loginUseCase) Execute(ctx context.Context, input *entity.LoginUseCaseInput) (*entity.LoginUseCaseOutput, error) {
 	user, err := uc.userRepo.FindByEmail(ctx, input.Email)
 	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
+		if errors.Is(err, ErrUserNotFound) {
 			return nil, ErrInvalidCredentials
 		}
 		return nil, err
@@ -54,10 +52,9 @@ func (uc *loginUseCase) Execute(ctx context.Context, input *entity.LoginUseCaseI
 
 	permissions := constants.GetPermissionsByUserType(user.Type)
 
-	expirationTime := time.Now().Add(10 * time.Minute)
+	expirationTime := time.Now().Add(1000 * time.Minute)
 	claims := &Claims{
 		UserID:      user.ID.Hex(),
-		Email:       user.Email,
 		Permissions: permissions,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
@@ -75,9 +72,5 @@ func (uc *loginUseCase) Execute(ctx context.Context, input *entity.LoginUseCaseI
 	return &entity.LoginUseCaseOutput{
 		Token:       tokenString,
 		ExpiresAt:   expirationTime,
-		UserID:      user.ID.Hex(),
-		Email:       user.Email,
-		UserType:    user.Type,
-		Permissions: permissions,
 	}, nil
 }

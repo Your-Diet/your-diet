@@ -11,28 +11,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/victorgiudicissi/your-diet/internal/entity"
+	"github.com/victorgiudicissi/your-diet/internal/usecase"
 )
-
-// DietRepository define a interface para o repositório de dietas
-type DietRepository interface {
-	CreateDiet(ctx context.Context, diet *entity.Diet) error
-	GetDietByID(ctx context.Context, id string) (*entity.Diet, error)
-	FindByUserEmail(ctx context.Context, userEmail string) ([]*entity.Diet, error)
-	UpdateDiet(ctx context.Context, diet *entity.Diet) error
-	Close() error
-}
 
 const (
 	dietCollectionName = "diets"
 )
 
-type dietRepository struct {
+type DietRepository struct {
 	client     *mongo.Client
 	database   string
 	collection string
 }
 
-func NewDietRepository(uri, database string) (DietRepository, error) {
+func NewDietRepository(uri, database string) (*DietRepository, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -45,20 +37,20 @@ func NewDietRepository(uri, database string) (DietRepository, error) {
 		return nil, err
 	}
 
-	return &dietRepository{
+	return &DietRepository{
 		client:     client,
 		database:   database,
 		collection: dietCollectionName,
 	}, nil
 }
 
-func (r *dietRepository) Close() error {
+func (r *DietRepository) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return r.client.Disconnect(ctx)
 }
 
-func (r *dietRepository) CreateDiet(ctx context.Context, diet *entity.Diet) error {
+func (r *DietRepository) CreateDiet(ctx context.Context, diet *entity.Diet) error {
 	collection := r.client.Database(r.database).Collection(r.collection)
 
 	diet.CreatedAt = time.Now()
@@ -72,7 +64,7 @@ func (r *dietRepository) CreateDiet(ctx context.Context, diet *entity.Diet) erro
 	return nil
 }
 
-func (r *dietRepository) GetDietByID(ctx context.Context, id string) (*entity.Diet, error) {
+func (r *DietRepository) GetDietByID(ctx context.Context, id string) (*entity.Diet, error) {
 	collection := r.client.Database(r.database).Collection(r.collection)
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -88,11 +80,22 @@ func (r *dietRepository) GetDietByID(ctx context.Context, id string) (*entity.Di
 	return &diet, nil
 }
 
-// FindByUserEmail retorna todas as dietas de um usuário
-func (r *dietRepository) FindByUserEmail(ctx context.Context, userEmail string) ([]*entity.Diet, error) {
+// FindDiets retorna as dietas com base nos filtros fornecidos
+func (r *DietRepository) FindDiets(ctx context.Context, filter *usecase.DietFilter) ([]*entity.Diet, error) {
 	collection := r.client.Database(r.database).Collection(r.collection)
 
-	cursor, err := collection.Find(ctx, bson.M{"user_email": userEmail})
+	// Construir o filtro do MongoDB dinamicamente com base nos campos fornecidos
+	mongoFilter := bson.M{}
+
+	if filter.UserEmail != nil {
+		mongoFilter["user_email"] = *filter.UserEmail
+	}
+
+	if filter.CreatedBy != nil {
+		mongoFilter["created_by"] = *filter.CreatedBy
+	}
+
+	cursor, err := collection.Find(ctx, mongoFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +110,7 @@ func (r *dietRepository) FindByUserEmail(ctx context.Context, userEmail string) 
 }
 
 // UpdateDiet atualiza uma dieta existente
-func (r *dietRepository) UpdateDiet(ctx context.Context, diet *entity.Diet) error {
+func (r *DietRepository) UpdateDiet(ctx context.Context, diet *entity.Diet) error {
 	collection := r.client.Database(r.database).Collection(r.collection)
 
 	diet.UpdatedAt = time.Now()

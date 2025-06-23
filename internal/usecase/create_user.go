@@ -22,7 +22,6 @@ func NewCreateUserUseCase(userRepo UserRepository) CreateUser {
 
 // Execute creates a new user.
 func (uc *createUserUseCase) Execute(ctx context.Context, user *entity.User) error {
-	user.Type = "DEFAULT"
 	_, err := uc.userRepo.Create(ctx, user)
 	if err != nil {
 		return err

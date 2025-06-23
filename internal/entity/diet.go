@@ -17,7 +17,7 @@ type Diet struct {
 	DietName       string    `bson:"name" json:"name"`
 	DurationInDays uint32    `bson:"duration_in_days" json:"duration_in_days"`
 	Status         string    `bson:"status" json:"status"`
-	Meals         []Meal     `bson:"meals" json:"meals"`
+	Meals          []Meal    `bson:"meals" json:"meals"`
 	Observations   string    `bson:"observations" json:"observations"`
 	CreatedBy      string    `bson:"created_by" json:"created_by"`
 	CreatedAt      time.Time `bson:"created_at" json:"created_at"`

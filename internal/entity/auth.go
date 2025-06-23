@@ -10,8 +10,4 @@ type LoginUseCaseInput struct {
 type LoginUseCaseOutput struct {
 	Token       string
 	ExpiresAt   time.Time
-	UserID      string
-	Email       string
-	UserType    string
-	Permissions []string
 }

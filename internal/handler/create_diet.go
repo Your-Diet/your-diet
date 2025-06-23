@@ -38,7 +38,7 @@ func (h *CreateDietHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	diet, err := dto.ConvertToDiet(claimsValue.(*middleware.Claims).Email, &req)
+	diet, err := dto.ConvertToDiet(claimsValue.(*middleware.Claims).UserID, &req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewError("something went wrong creating diet", "invalid ingredients: " + err.Error()))
 		return

@@ -31,18 +31,18 @@ func (h *UpdateDietHandler) Handle(c *gin.Context) {
 	// Obter o email do usuário do token JWT (já validado pelo middleware de autenticação)
 	claimsValue, exists := c.Get(string(middleware.TokenContextKey))
 	if !exists {
-		c.JSON(http.StatusUnauthorized, dto.NewError("something went wrong updating diet", "usuário não autenticado"))
+		c.JSON(http.StatusUnauthorized, dto.NewError("something went wrong getting user claims", "usuário não autenticado"))
 		return
 	}
 
 	// Fazer o bind do JSON para o DTO
-	var req *dto.DietRequest
+	var req dto.DietRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewError("something went wrong updating diet", "dados inválidos: " + err.Error()))
 		return
 	}
 
-	diet, err := dto.ConvertToDiet(claimsValue.(*middleware.Claims).Email, req)
+	diet, err := dto.ConvertToDiet(claimsValue.(*middleware.Claims).UserID, &req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewError("something went wrong updating diet", err.Error()))
 		return

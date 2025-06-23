@@ -8,7 +8,7 @@ import (
 	"github.com/victorgiudicissi/your-diet/internal/constants"
 	"github.com/victorgiudicissi/your-diet/internal/handler"
 	"github.com/victorgiudicissi/your-diet/internal/middleware"
-	"github.com/victorgiudicissi/your-diet/internal/repository"
+	//"github.com/victorgiudicissi/your-diet/internal/repository"
 	"github.com/victorgiudicissi/your-diet/internal/usecase"
 )
 
@@ -29,24 +29,24 @@ func main() {
 		dbCollection = "diets"
 	}
 
-	// Create MongoDB repository for Diets
-	dietRepo, err := repository.NewDietRepository(mongoURI, dbName) // dbCollection is 'diets'
-	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB for diets: %v", err)
-	}
+	// // Create MongoDB repository for Diets
+	// dietRepo, err := repository.NewDietRepository(mongoURI, dbName) // dbCollection is 'diets'
+	// if err != nil {
+	// 	log.Fatalf("Failed to connect to MongoDB for diets: %v", err)
+	// }
 
-	// Create MongoDB repository for Users (uses 'users' collection by default)
-	userRepo, err := repository.NewMongoUserRepository(mongoURI, dbName)
-	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB for users: %v", err)
-	}
+	// // Create MongoDB repository for Users (uses 'users' collection by default)
+	// userRepo, err := repository.NewMongoUserRepository(mongoURI, dbName)
+	// if err != nil {
+	// 	log.Fatalf("Failed to connect to MongoDB for users: %v", err)
+	// }
 
 	// Create use cases with repositories
-	createDietUseCase := usecase.NewCreateDietUseCase(dietRepo)
-	updateDietUseCase := usecase.NewUpdateDietUseCase(dietRepo)
-	createUserUseCase := usecase.NewCreateUserUseCase(userRepo)
-	loginUseCase := usecase.NewLoginUseCase(userRepo)
-	listDietsUseCase := usecase.NewListDietsUseCase(dietRepo)
+	createDietUseCase := usecase.NewCreateDietUseCase(nil)
+	updateDietUseCase := usecase.NewUpdateDietUseCase(nil)
+	createUserUseCase := usecase.NewCreateUserUseCase(nil)
+	loginUseCase := usecase.NewLoginUseCase(nil)
+	listDietsUseCase := usecase.NewListDietsUseCase(nil, nil)
 
 	// Create handlers with use cases
 	dietHandler := handler.NewCreateDietHandler(createDietUseCase)
@@ -56,12 +56,40 @@ func main() {
 	listDietsHandler := handler.NewListDietsHandler(listDietsUseCase)
 
 	// Set up router
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Logger())
+	r.Use(gin.Recovery())
+
+	// Configure CORS
+	r.Use(func(c *gin.Context) {
+		origin := c.Request.Header.Get("Origin")
+		allowedOrigins := map[string]bool{
+			"http://localhost:5173": true,
+			"http://localhost:3000":  true,
+		}
+
+		if allowedOrigins[origin] {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+			c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, PATCH, DELETE")
+
+			if c.Request.Method == "OPTIONS" {
+				c.AbortWithStatus(204)
+				return
+			}
+		}
+
+		c.Next()
+	})
 
 	// Set trusted proxies
 	if err := r.SetTrustedProxies([]string{"127.0.0.1"}); err != nil {
 		log.Fatalf("Failed to set trusted proxies: %v", err)
 	}
+
+	// Remove trailing slashes from routes
+	r.RemoveExtraSlash = true
 
 	// Public routes
 	r.GET("/ping", handler.Ping)
@@ -71,20 +99,17 @@ func main() {
 	// User routes (public)
 	userGroup := apiGroup.Group("/users")
 	{
-		userGroup.POST("/", registerUserHandler.Handle)
+		userGroup.POST("", registerUserHandler.Handle)
 		userGroup.POST("/login", userLoginHandler.HandleLogin)
 	}
 
+	// Diet routes
+	dietGroup := apiGroup.Group("/diets")
+	dietGroup.Use(middleware.AuthMiddleware([]byte(usecase.JWTSecretKey)))
 	{
-		// Diet routes
-		dietGroup := apiGroup.Group("/diets")
-		{
-			dietGroup.Use(middleware.AuthMiddleware([]byte(usecase.JWTSecretKey)))
-
-			dietGroup.POST("/", middleware.HasPermission(constants.PermissionCreateDiet), dietHandler.Handle)
-			dietGroup.PUT("/:id", middleware.HasPermission(constants.PermissionUpdateDiet), updateDietHandler.Handle)
-			dietGroup.GET("/", middleware.HasPermission(constants.PermissionListDiet), listDietsHandler.Handle)
-		}
+		dietGroup.POST("", middleware.HasPermission(constants.PermissionCreateDiet), dietHandler.Handle)
+		dietGroup.PUT("/:id", middleware.HasPermission(constants.PermissionUpdateDiet), updateDietHandler.Handle)
+		dietGroup.GET("", middleware.HasPermission(constants.PermissionListDiet), listDietsHandler.Handle)
 	}
 
 	// Start server

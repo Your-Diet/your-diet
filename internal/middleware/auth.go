@@ -19,7 +19,6 @@ const (
 // Claims defines the JWT claims structure
 type Claims struct {
 	UserID      string   `json:"user_id"`
-	Email       string   `json:"email"`
 	Permissions []string `json:"permissions"`
 	jwt.RegisteredClaims
 }

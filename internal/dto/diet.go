@@ -20,7 +20,7 @@ type IngredientRequest struct {
 type MealRequest struct {
 	Name        string              `json:"name" validate:"required,min=3,max=100"`
 	Description string              `json:"description"`
-	TimeOfDay   string              `json:"time_of_day" validate:"required,oneof=café_da_manhã almoço jantar lanche ceia"`
+	TimeOfDay   string              `json:"time_of_day" validate:"required"`
 	Ingredients []IngredientRequest `json:"ingredients" validate:"required,min=1,dive"`
 }
 
@@ -207,6 +207,13 @@ type IngredientResponse struct {
 	Quantity    float64              `json:"quantity"`
 	Unit        string               `json:"unit"`
 	Substitutes []IngredientResponse `json:"substitutes"`
+}
+
+// ListDietsInput represents the input parameters for listing diets
+type ListDietsInput struct {
+	UserEmail       string `form:"userEmail" binding:"required,email"`
+	CreatedBySearch bool   `form:"createdBySearch"`
+	UserID          string `form:"userId" binding:"required"`
 }
 
 type ListDietsUseCaseOutput struct {

@@ -63,6 +63,9 @@ func (h *RegisterUserHandler) Handle(c *gin.Context) {
 	user := &entity.User{
 		Email:    req.Email,
 		Password: string(hashedPassword),
+		Type:     "DEFAULT",
+		Age:      req.Age,
+		Gender:   req.Gender,
 	}
 
 	err = h.createUserUseCase.Execute(c.Request.Context(), user)

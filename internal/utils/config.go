@@ -23,7 +23,7 @@ func LoadEnvConfig() *EnvConfig {
 		}
 	}
 
-	mongoURL := os.Getenv("MONGODB_URI")
+	mongoURL := os.Getenv("MONGODB_URL")
 	if mongoURL == "" {
 		panic("MONGODB_URI is not set")
 	}

@@ -13,14 +13,10 @@ type EnvConfig struct {
 }
 
 func LoadEnvConfig() *EnvConfig {
-	scope := os.Getenv("SCOPE")
+	err := godotenv.Load(".env")
 
-	if scope != "prod" {
-		err := godotenv.Load(".env")
-
-		if err != nil {
-			panic("Error loading .env file: " + err.Error())
-		}
+	if err != nil {
+		panic("Error loading .env file: " + err.Error())
 	}
 
 	mongoURL := os.Getenv("MONGODB_URL")

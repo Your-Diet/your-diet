@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,7 @@ func (h *ListDietsHandler) Handle(c *gin.Context) {
 	// Tenta obter as claims do contexto do Gin primeiro
 	claimsValue, exists := c.Get(string(middleware.TokenContextKey))
 	if !exists {
+		log.Printf("[ListDietsHandler] Missing user claims in context")
 		c.JSON(http.StatusUnauthorized, dto.NewError("something went wrong getting user claims", "usuário não autenticado"))
 	}
 
@@ -45,6 +47,7 @@ func (h *ListDietsHandler) Handle(c *gin.Context) {
 	output, err := h.listDietsUseCase.Execute(c.Request.Context(), input)
 
 	if err != nil {
+		log.Printf("[ListDietsHandler] Failed to list diets: %v", err)
 		c.JSON(http.StatusInternalServerError, dto.NewError("something went wrong listing diets", err.Error()))
 		return
 	}

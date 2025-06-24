@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"regexp"
 	"unicode"
@@ -38,17 +39,20 @@ func (h *RegisterUserHandler) Handle(c *gin.Context) {
 	var req dto.RegisterUserRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[RegisterUserHandler] Failed to bind JSON: %v", err)
 		c.JSON(http.StatusBadRequest, dto.NewError("something went wrong binding request data", err.Error()))
 		return
 	}
 	// Validate Email
 	if !emailRegex.MatchString(req.Email) {
+		log.Printf("[RegisterUserHandler] Invalid email format: %s", req.Email)
 		c.JSON(http.StatusBadRequest, dto.NewError("something went wrong validating request data", ErrInvalidEmailFormat.Error()))
 		return
 	}
 
 	passworValidationErrs := validatePassword(req.Password)
 	if len(passworValidationErrs) > 0 {
+		log.Printf("[RegisterUserHandler] Password validation error: %s", passworValidationErrs[0])
 		c.JSON(http.StatusBadRequest, dto.NewError("something went wrong validating request data", passworValidationErrs[0]))
 		return
 	}
@@ -56,6 +60,7 @@ func (h *RegisterUserHandler) Handle(c *gin.Context) {
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
+		log.Printf("[RegisterUserHandler] Failed to hash password: %v", err)
 		c.JSON(http.StatusInternalServerError, dto.NewError("something went wrong hashing password", "failed to hash password"))
 		return
 	}
@@ -70,6 +75,7 @@ func (h *RegisterUserHandler) Handle(c *gin.Context) {
 
 	err = h.createUserUseCase.Execute(c.Request.Context(), user)
 	if err != nil {
+		log.Printf("[RegisterUserHandler] Failed to create user: %v", err)
 		c.JSON(http.StatusInternalServerError, dto.NewError("something went wrong creating user", "failed to register user"))
 		return
 	}

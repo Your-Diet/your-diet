@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/victorgiudicissi/your-diet/internal/entity"
+	"github.com/victorgiudicissi/your-diet/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -24,12 +25,11 @@ type UserRepository struct {
 }
 
 // NewMongoUserRepository creates a new MongoUserRepository.
-func NewMongoUserRepository(mongoURI, dbName string) (*UserRepository, error) {
-	clientOptions := options.Client().ApplyURI(mongoURI)
+func NewMongoUserRepository(cfg *utils.EnvConfig) (*UserRepository, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, clientOptions)
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MongoURL))
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func NewMongoUserRepository(mongoURI, dbName string) (*UserRepository, error) {
 
 	return &UserRepository{
 		client:     client,
-		database:   dbName,
+		database:   cfg.DBName,
 		collection: userCollectionName,
 	}, nil
 }

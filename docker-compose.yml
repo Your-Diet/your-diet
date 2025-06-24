@@ -5,6 +5,9 @@ services:
     image: mongo
     ports:
       - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=your-diet-local
+      - MONGO_INITDB_ROOT_PASSWORD=your-diet-pwd
     volumes:
       - mongodb_data:/data/db
     restart: unless-stopped

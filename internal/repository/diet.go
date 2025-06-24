@@ -12,6 +12,7 @@ import (
 
 	"github.com/victorgiudicissi/your-diet/internal/entity"
 	"github.com/victorgiudicissi/your-diet/internal/usecase"
+	"github.com/victorgiudicissi/your-diet/internal/utils"
 )
 
 const (
@@ -24,11 +25,11 @@ type DietRepository struct {
 	collection string
 }
 
-func NewDietRepository(uri, database string) (*DietRepository, error) {
+func NewDietRepository(cfg *utils.EnvConfig) (*DietRepository, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MongoURL))
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +40,7 @@ func NewDietRepository(uri, database string) (*DietRepository, error) {
 
 	return &DietRepository{
 		client:     client,
-		database:   database,
+		database:   cfg.DBName,
 		collection: dietCollectionName,
 	}, nil
 }

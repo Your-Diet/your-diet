@@ -65,16 +65,27 @@ func (h *RegisterUserHandler) Handle(c *gin.Context) {
 		return
 	}
 
+	userType := "DEFAULT"
+
+	if req.IsNutritionist {
+		userType = "NUTRITIONIST"
+	}
+
 	user := &entity.User{
 		Email:    req.Email,
 		Password: string(hashedPassword),
-		Type:     "DEFAULT",
+		Type:     userType,
 		Age:      req.Age,
 		Gender:   req.Gender,
 	}
 
 	err = h.createUserUseCase.Execute(c.Request.Context(), user)
 	if err != nil {
+		if errors.Is(err, usecase.ErrEmailAlreadyExists) {
+			log.Printf("[RegisterUserHandler] Email already exists: %s", req.Email)
+			c.JSON(http.StatusConflict, dto.NewError("email already exists", "a user with this email already exists"))
+			return
+		}
 		log.Printf("[RegisterUserHandler] Failed to create user: %v", err)
 		c.JSON(http.StatusInternalServerError, dto.NewError("something went wrong creating user", "failed to register user"))
 		return

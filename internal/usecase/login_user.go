@@ -32,7 +32,7 @@ type loginUseCase struct {
 	userRepo UserRepository
 }
 
-func NewLoginUseCase(userRepo UserRepository) LoginUseCase {
+func NewLogin(userRepo UserRepository) LoginUseCase {
 	return &loginUseCase{userRepo: userRepo}
 }
 
@@ -70,7 +70,7 @@ func (uc *loginUseCase) Execute(ctx context.Context, input *entity.LoginUseCaseI
 	}
 
 	return &entity.LoginUseCaseOutput{
-		Token:       tokenString,
-		ExpiresAt:   expirationTime,
+		Token:     tokenString,
+		ExpiresAt: expirationTime,
 	}, nil
 }

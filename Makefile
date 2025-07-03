@@ -6,4 +6,4 @@ help:
 	@echo "  help  - Show this help message"
 
 run:
-	@docker-compose up -d && go run cmd/api/main.go 
+	@docker-compose up --build --force-recreate

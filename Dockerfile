@@ -4,11 +4,11 @@ FROM golang:1.23-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Copy go mod and sum files
+# Copy go mod and sum files first to cache dependencies
 COPY go.mod go.sum ./
 
 # Download all dependencies
-RUN go mod tidy
+RUN go mod download
 
 # Copy the source code
 COPY . .

@@ -16,11 +16,11 @@ type listDietsUseCase struct {
 	userRepo UserRepository
 }
 
-type ListDiets interface{
+type ListDiets interface {
 	Execute(ctx context.Context, input *dto.ListDietsInput) (*dto.ListDietsUseCaseOutput, error)
 }
 
-func NewListDietsUseCase(dietRepo DietRepository, userRepo UserRepository) ListDiets {
+func NewListDiets(dietRepo DietRepository, userRepo UserRepository) ListDiets {
 	return &listDietsUseCase{
 		dietRepo: dietRepo,
 		userRepo: userRepo,

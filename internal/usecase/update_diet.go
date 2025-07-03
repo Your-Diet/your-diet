@@ -17,8 +17,7 @@ type UpdateDietUseCaseInput struct {
 	Status         *string
 	Meals          []entity.Meal
 	Observations   *string
-}	
-
+}
 
 // UpdateDietUseCase define a interface para o caso de uso de atualização de dieta
 type UpdateDietUseCase interface {
@@ -29,8 +28,8 @@ type updateDietUseCase struct {
 	dietRepo DietRepository
 }
 
-// NewUpdateDietUseCase cria uma nova instância de UpdateDietUseCase
-func NewUpdateDietUseCase(dietRepo DietRepository) UpdateDietUseCase {
+// NewUpdateDiet cria uma nova instância de UpdateDietUseCase
+func NewUpdateDiet(dietRepo DietRepository) UpdateDietUseCase {
 	return &updateDietUseCase{
 		dietRepo: dietRepo,
 	}

@@ -18,8 +18,8 @@ type CreateUser interface {
 	Execute(ctx context.Context, user *entity.User) error
 }
 
-// NewCreateUserUseCase creates a new instance of CreateUserUseCase.
-func NewCreateUserUseCase(userRepo UserRepository) CreateUser {
+// NewCreateUser creates a new instance of CreateUserUseCase.
+func NewCreateUser(userRepo UserRepository) CreateUser {
 	return &createUserUseCase{userRepo: userRepo}
 }
 

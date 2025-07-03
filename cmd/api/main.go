@@ -15,7 +15,6 @@ import (
 func main() {
 	cfg := utils.LoadEnvConfig()
 
-
 	dietRepo, err := repository.NewDietRepository(cfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB for diets: %v", err)
@@ -26,17 +25,20 @@ func main() {
 		log.Fatalf("Failed to connect to MongoDB for users: %v", err)
 	}
 
-	createDietUseCase := usecase.NewCreateDietUseCase(dietRepo)
-	updateDietUseCase := usecase.NewUpdateDietUseCase(dietRepo)
-	createUserUseCase := usecase.NewCreateUserUseCase(userRepo)
-	loginUseCase := usecase.NewLoginUseCase(userRepo)
-	listDietsUseCase := usecase.NewListDietsUseCase(dietRepo, userRepo)
+	createDietUseCase := usecase.NewCreateDiet(dietRepo)
+	updateDietUseCase := usecase.NewUpdateDiet(dietRepo)
+	createUserUseCase := usecase.NewCreateUser(userRepo)
+	loginUseCase := usecase.NewLogin(userRepo)
+	listDietsUseCase := usecase.NewListDiets(dietRepo, userRepo)
+	hub := usecase.NewNotificationHub()
 
 	dietHandler := handler.NewCreateDietHandler(createDietUseCase)
 	updateDietHandler := handler.NewUpdateDietHandler(updateDietUseCase)
 	registerUserHandler := handler.NewRegisterUserHandler(createUserUseCase)
 	userLoginHandler := handler.NewLoginHandler(loginUseCase)
 	listDietsHandler := handler.NewListDietsHandler(listDietsUseCase)
+	sseHandler := handler.NewSSEHandler(hub)
+	notificationHandler := handler.NewNotificationHandler(hub)
 
 	r := gin.New()
 	r.Use(gin.Logger())
@@ -87,6 +89,13 @@ func main() {
 		dietGroup.POST("", middleware.HasPermission(constants.PermissionCreateDiet), dietHandler.Handle)
 		dietGroup.PUT("/:id", middleware.HasPermission(constants.PermissionUpdateDiet), updateDietHandler.Handle)
 		dietGroup.GET("", middleware.HasPermission(constants.PermissionListDiet), listDietsHandler.Handle)
+	}
+
+	sseGroup := apiGroup.Group("/sse")
+	sseGroup.Use(middleware.AuthMiddleware([]byte(usecase.JWTSecretKey)))
+	{
+		sseGroup.GET("/events", sseHandler.Handle)
+		sseGroup.POST("/notify", notificationHandler.Handle)
 	}
 
 	log.Printf("Server starting on :%s", cfg.Port)

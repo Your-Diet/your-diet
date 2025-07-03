@@ -7,21 +7,25 @@ import (
 )
 
 type EnvConfig struct {
-	MongoURL      string
-	DBName        string
-	Port          string
+	MongoURL string
+	DBName   string
+	Port     string
 }
 
 func LoadEnvConfig() *EnvConfig {
-	err := godotenv.Load(".env")
+	scope := os.Getenv("SCOPE")
 
-	if err != nil {
-		panic("Error loading .env file: " + err.Error())
+	if scope == "" || scope != "prod" {
+		err := godotenv.Load(".env")
+
+		if err != nil {
+			panic("Error loading .env file: " + err.Error())
+		}
 	}
 
 	mongoURL := os.Getenv("MONGODB_URL")
 	if mongoURL == "" {
-		panic("MONGODB_URI is not set")
+		panic("MONGODB_URL is not set")
 	}
 
 	dbName := os.Getenv("MONGO_DB_NAME")
@@ -35,8 +39,8 @@ func LoadEnvConfig() *EnvConfig {
 	}
 
 	return &EnvConfig{
-		MongoURL:      mongoURL,
-		DBName:        dbName,
-		Port:          port,
+		MongoURL: mongoURL,
+		DBName:   dbName,
+		Port:     port,
 	}
 }

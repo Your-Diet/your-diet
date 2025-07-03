@@ -11,5 +11,20 @@ services:
       - mongodb_data:/data/db
     restart: unless-stopped
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017/your-diet
+      - PORT=8080
+      - MONGO_DB_NAME=your-diet
+      - SCOPE=prod
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
 volumes:
   mongodb_data:

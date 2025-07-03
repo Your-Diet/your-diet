@@ -14,7 +14,7 @@ type createDietUseCase struct {
 	dietRepo DietRepository
 }
 
-func NewCreateDietUseCase(dietRepo DietRepository) CreateDiet {
+func NewCreateDiet(dietRepo DietRepository) CreateDiet {
 	return &createDietUseCase{
 		dietRepo: dietRepo,
 	}

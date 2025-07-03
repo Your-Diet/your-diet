@@ -14,6 +14,10 @@ type ContextKey string
 const (
 	// TokenContextKey is the key used to store the token claims in the context
 	TokenContextKey ContextKey = "token_claims"
+	// UserIDContextKey is the key used to store the user ID in the context
+	UserIDContextKey ContextKey = "user_id"
+	// PermissionsContextKey is the key used to store the user permissions in the context
+	PermissionsContextKey ContextKey = "permissions"
 )
 
 // Claims defines the JWT claims structure
@@ -63,8 +67,10 @@ func AuthMiddleware(jwtSecretKey []byte) gin.HandlerFunc {
 			return
 		}
 
-		// Add claims to both Gin context and request context
+		// Add claims, user ID and permissions to context
 		c.Set(string(TokenContextKey), claims)
+		c.Set(string(UserIDContextKey), claims.UserID)
+		c.Set(string(PermissionsContextKey), claims.Permissions)
 
 		// Continue to the next handler
 		c.Next()
@@ -74,15 +80,14 @@ func AuthMiddleware(jwtSecretKey []byte) gin.HandlerFunc {
 // HasPermission checks if the user has the required permission
 func HasPermission(requiredPermission string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		claims, ok := c.Get(string(TokenContextKey))
+		permissions, ok := c.Get(string(PermissionsContextKey))
 		if !ok {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "No authentication data found"})
 			return
 		}
 
-		// Check if the user has the required permission
 		hasPermission := false
-		for _, p := range claims.(*Claims).Permissions {
+		for _, p := range permissions.([]string) {
 			if p == requiredPermission {
 				hasPermission = true
 				break

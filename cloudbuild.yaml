@@ -32,15 +32,12 @@ steps:
       - deploy
       - $_SERVICE_NAME
       - '--image'
-      - 'gcr.io/$PROJECT_ID/your-diet:latest)'
+      - 'gcr.io/$PROJECT_ID/your-diet:latest'
       - '--region'
       - $_DEPLOY_REGION
       - '--platform'
       - '$_PLATFORM'
 
-images:
-  - 'gcr.io/$PROJECT_ID/your-diet:$(cat /workspace/version)'
-  - 'gcr.io/$PROJECT_ID/your-diet:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY

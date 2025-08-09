@@ -18,8 +18,6 @@ steps:
       - $_DEPLOY_REGION
       - '--platform'
       - $_PLATFORM
-      - '--set-env-vars'
-      - 'MONGODB_URL=$_MONGODB_URL,MONGO_DB_NAME=$_MONGO_DB_NAME,PORT=$_PORT'
     entrypoint: gcloud
 
 images:

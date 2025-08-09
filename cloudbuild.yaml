@@ -5,7 +5,9 @@ steps:
     entrypoint: bash
     args:
       - '-c'
-      - 'git describe --tags --abbrev=0 > /workspace/version'
+      - |
+        git fetch --tags
+        git describe --tags --abbrev=0 --always > /workspace/version
 
   # Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'

@@ -46,7 +46,7 @@ func main() {
 		allowedOrigins := map[string]bool{
 			"http://localhost:5173": true,
 			"http://localhost:3000": true,
-			"https://your-diet-frontend-prod-26110891251.us-central1.run.app": true,
+			"https://your-diet-frontend-26110891251.southamerica-east1.run.app": true,
 		}
 
 		if allowedOrigins[origin] {
